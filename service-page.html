@@ -21,7 +21,7 @@
       c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
       t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
       y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-    })(window, document, "clarity", "script", "vc9s81oytd");
+    })(window, document, "clarity", "script", "w3mew1om3b");
   </script>
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -75,6 +75,10 @@
       text-decoration: none;
     }
 
+    strong {
+      font-weight: 500;
+    }
+
     .container {
       width: 100%;
       max-width: 1120px;
@@ -87,7 +91,7 @@
       line-height: 1.4;
       text-transform: uppercase;
       letter-spacing: 0.2em;
-      font-weight: 900;
+      font-weight: 600;
       color: var(--slate-400);
     }
 
@@ -129,7 +133,7 @@
       font-size: 11px;
       text-transform: uppercase;
       letter-spacing: 0.16em;
-      font-weight: 800;
+      font-weight: 600;
       color: var(--slate-600);
     }
 
@@ -150,7 +154,7 @@
       font-size: 10px;
       text-transform: uppercase;
       letter-spacing: 0.15em;
-      font-weight: 800;
+      font-weight: 600;
       transition: color 0.2s;
     }
 
@@ -169,7 +173,7 @@
       text-transform: uppercase;
       font-size: 10px;
       letter-spacing: 0.15em;
-      font-weight: 900;
+      font-weight: 600;
       transition: background 0.2s;
     }
 
@@ -194,7 +198,7 @@
       margin: 0;
       font-size: clamp(30px, 7.4vw, 54px);
       line-height: 1.08;
-      font-weight: 900;
+      font-weight: 600;
       letter-spacing: -0.02em;
       color: var(--slate-900);
     }
@@ -279,7 +283,7 @@
       font-size: clamp(29px, 6.2vw, 46px);
       line-height: 1.1;
       letter-spacing: -0.02em;
-      font-weight: 800;
+      font-weight: 600;
       color: var(--slate-900);
     }
 
@@ -408,7 +412,7 @@
       justify-content: center;
       gap: 7px;
       border-radius: 12px;
-      font-weight: 800;
+      font-weight: 600;
       letter-spacing: 0.01em;
       transition: transform 0.2s, box-shadow 0.2s, background 0.2s, color 0.2s;
       cursor: pointer;
@@ -493,7 +497,7 @@
       font-size: 11px;
       text-transform: uppercase;
       letter-spacing: 0.18em;
-      font-weight: 800;
+      font-weight: 600;
       color: var(--slate-500);
     }
 
@@ -515,7 +519,7 @@
       background: var(--emerald-50);
       color: var(--emerald-600);
       font-size: 10px;
-      font-weight: 800;
+      font-weight: 600;
       letter-spacing: 0.12em;
       text-transform: uppercase;
       padding: 3px 8px;
@@ -529,7 +533,7 @@
       text-transform: uppercase;
       letter-spacing: 0.13em;
       color: var(--slate-600);
-      font-weight: 800;
+      font-weight: 600;
       padding: 6px 9px;
       cursor: pointer;
       transition: all 0.2s;
@@ -581,7 +585,7 @@
       font-size: 18px;
       line-height: 1.25;
       color: var(--slate-900);
-      font-weight: 800;
+      font-weight: 600;
     }
 
     .feature-card p {
@@ -619,7 +623,7 @@
       font-family: "Cormorant Garamond", serif;
       font-size: 34px;
       line-height: 1;
-      font-weight: 700;
+      font-weight: 500;
       color: var(--blue-700);
       margin-bottom: 22px;
     }
@@ -629,7 +633,7 @@
       color: var(--slate-900);
       font-size: 18px;
       line-height: 1.25;
-      font-weight: 800;
+      font-weight: 600;
     }
 
     .step-card p {
@@ -658,7 +662,7 @@
       cursor: pointer;
       font-size: 15px;
       line-height: 1.45;
-      font-weight: 700;
+      font-weight: 600;
       color: var(--slate-800);
       display: flex;
       align-items: center;
@@ -715,7 +719,7 @@
       text-transform: uppercase;
       letter-spacing: 0.2em;
       color: var(--slate-400);
-      font-weight: 900;
+      font-weight: 600;
     }
 
     .footer-col a {
@@ -748,7 +752,7 @@
       border-radius: 999px;
       color: var(--slate-400);
       font-size: 11px;
-      font-weight: 800;
+      font-weight: 600;
       transition: all 0.2s;
     }
 
@@ -770,7 +774,7 @@
       font-size: 10px;
       letter-spacing: 0.14em;
       text-transform: uppercase;
-      font-weight: 800;
+      font-weight: 600;
     }
 
     @media (min-width: 700px) {
@@ -921,7 +925,8 @@
 
             <div class="button-row">
               <button class="btn btn-primary" type="submit">Generate Gmail Variations</button>
-              <button id="batchCopyBtn" class="btn btn-secondary" type="button" disabled>Copy All Shown</button>
+              <button id="batchCopyBtn" class="btn btn-secondary" type="button" disabled>Copy Page</button>
+              <button id="copyAllTotalBtn" class="btn btn-secondary" type="button" disabled>Copy All (All Pages)</button>
               <button id="resetBtn" class="btn btn-secondary" type="button">Reset</button>
             </div>
 
@@ -1063,7 +1068,7 @@
         <section class="footer-brand">
           <img src="https://iexcel.co/wp-content/uploads/2023/01/iexcel_logo.png" alt="iExcel" />
           <p>Digital Marketing, Focused On Growth. Practical Gmail generator tools for email marketing testing.</p>
-          <a href="tel:+13477624250" style="color: var(--blue-600); font-size: 13px; font-weight: 700;">+1 (347) 762-4250</a>
+          <a href="tel:+13477624250" style="color: var(--blue-600); font-size: 13px; font-weight: 500;">+1 (347) 762-4250</a>
         </section>
 
         <section class="footer-col">
@@ -1119,8 +1124,9 @@
     const nextPageBtn = document.getElementById('nextPageBtn');
     const copyPrimaryBtn = document.getElementById('copyPrimaryBtn');
     const batchCopyBtn = document.getElementById('batchCopyBtn');
+    const copyAllTotalBtn = document.getElementById('copyAllTotalBtn');
     const resetBtn = document.getElementById('resetBtn');
-    const MAX_VISIBLE_RESULTS = 10;
+    const MAX_VISIBLE_RESULTS = 51;
     const MAX_VISIBLE_EXTRAS = MAX_VISIBLE_RESULTS - 1;
 
     let lastOutput = {
@@ -1206,7 +1212,7 @@
       }).join('');
 
       extraResults.innerHTML = cards;
-      extrasMeta.textContent = `Showing extras ${startIndex + 1}-${endIndex} of ${extras.length}. Max 10 results on screen including the recommended result.`;
+      extrasMeta.textContent = `Showing extras ${startIndex + 1}-${endIndex} of ${extras.length}. Showing up to ${MAX_VISIBLE_RESULTS} total results on screen.`;
       extrasPager.hidden = totalPages <= 1;
       prevPageBtn.disabled = safePage <= 1;
       nextPageBtn.disabled = safePage >= totalPages;
@@ -1279,11 +1285,12 @@
 
       const shownCount = 1 + (payload.mode === 'all' ? getVisibleExtras(payload.extras, 1).length : 0);
       batchCopyBtn.disabled = shownCount === 0;
+      copyAllTotalBtn.disabled = !payload.primary && payload.extras.length === 0;
 
       if (payload.modeWarning) {
         setStatus(payload.modeWarning, true);
       } else if (payload.mode === 'all') {
-        setStatus(`Generated 1 word-split + ${payload.extras.length} extra variant${payload.extras.length === 1 ? '' : 's'} in all mode. Showing up to 10 at a time.`);
+        setStatus(`Generated 1 word-split + ${payload.extras.length} extra variant${payload.extras.length === 1 ? '' : 's'} in all mode. Showing up to ${MAX_VISIBLE_RESULTS} at a time.`);
       } else {
         setStatus('Generated 1 recommended word-split variant.');
       }
@@ -1331,9 +1338,21 @@
 
       try {
         await copyText(lines.join('\n'));
-        setStatus(`Copied ${lines.length} visible result${lines.length === 1 ? '' : 's'} as batch.`);
+        setStatus(`Copied ${lines.length} visible result${lines.length === 1 ? '' : 's'} from this page.`);
       } catch (_error) {
         setStatus('Batch copy failed. Try selecting and copying manually.', true);
+      }
+    });
+
+    copyAllTotalBtn.addEventListener('click', async () => {
+      const all = [lastOutput.primary, ...lastOutput.extras].filter(Boolean);
+      if (!all.length) return;
+
+      try {
+        await copyText(all.join('\n'));
+        setStatus(`Copied ALL ${all.length} variation${all.length === 1 ? '' : 's'} to clipboard.`);
+      } catch (_error) {
+        setStatus('Copy failed. Try selecting and copying manually.', true);
       }
     });
 
@@ -1378,6 +1397,7 @@
       extrasPager.hidden = true;
       extraResults.innerHTML = '';
       batchCopyBtn.disabled = true;
+      copyAllTotalBtn.disabled = true;
       lastOutput = { mode: 'wordSplit', primary: '', extras: [], currentPage: 1 };
       setStatus('Ready.');
       emailInput.focus();
