@@ -17,6 +17,9 @@ REGION="us-central1"
 PROJECT_ID="iexcel-agents"
 GCLOUD_ACCOUNT="ads@iexcel.co"
 IMAGE_URI="gcr.io/${PROJECT_ID}/${SERVICE_NAME}:latest"
+RUNTIME_SA="gmail-dot-gen-sheets@iexcel-agents.iam.gserviceaccount.com"
+SHEETS_SPREADSHEET_ID="12y0qOlzsx5U8sV5jV7sgJW88BOQli9ENC6w1nLiTKLA"
+SHEETS_TAB="gmail-email-generator"
 
 # =============================================================================
 # USAGE
@@ -111,13 +114,14 @@ deploy_production() {
         --allow-unauthenticated \
         --project "${PROJECT_ID}" \
         --account "${GCLOUD_ACCOUNT}" \
+        --service-account "${RUNTIME_SA}" \
         --port 8080 \
         --memory 256Mi \
         --cpu 1 \
         --concurrency 80 \
         --timeout 60 \
         --max-instances 10 \
-        --set-env-vars "APP_BASE_PATH=${BASE_PATH},NODE_ENV=production"
+        --set-env-vars "APP_BASE_PATH=${BASE_PATH},NODE_ENV=production,GOOGLE_SHEETS_SPREADSHEET_ID=${SHEETS_SPREADSHEET_ID},GOOGLE_SHEETS_TAB=${SHEETS_TAB}"
 
     echo ""
     echo "=============================================="

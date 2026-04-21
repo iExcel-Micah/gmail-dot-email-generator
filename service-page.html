@@ -3,8 +3,84 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Free Gmail Address Generator | Gmail Dot Trick Variations</title>
+  <title>Free Gmail Dot Variations Generator | iExcel</title>
   <meta name="description" content="Free Gmail generator for dot trick variations. Create Gmail dot aliases to test email marketing flows, forms, and segmentation with one inbox." />
+
+  <!-- Open Graph / Social -->
+  <meta property="og:title" content="Free Gmail Dot Variations Generator | iExcel" />
+  <meta property="og:description" content="Free Gmail generator for dot trick variations. Create Gmail dot aliases to test email marketing flows, forms, and segmentation with one inbox." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://agents.iexcel.co/gmail-dot-variations-generator" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Free Gmail Dot Variations Generator | iExcel" />
+  <meta name="twitter:description" content="Free Gmail generator for dot trick variations. Create Gmail dot aliases to test email marketing flows, forms, and segmentation with one inbox." />
+
+  <!-- JSON-LD Schema: Service -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Service",
+    "name": "Free Gmail Dot Variations Generator",
+    "description": "Free Gmail generator for dot trick variations. Create Gmail dot aliases to test email marketing flows, forms, and segmentation with one inbox.",
+    "provider": { "@type": "Organization", "name": "iExcel", "url": "https://iexcel.co" },
+    "url": "https://agents.iexcel.co/gmail-dot-variations-generator",
+    "serviceType": "Gmail Variations Generator",
+    "areaServed": "Worldwide",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+  }
+  </script>
+
+  <!-- JSON-LD Schema: FAQ -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "What is the Gmail dot trick?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Gmail ignores dots in the local part of an address. So name@gmail.com, n.ame@gmail.com, and n.a.m.e@gmail.com all deliver to the same inbox — giving you unlimited unique variations from one account."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Do Gmail dot variations really deliver to one inbox?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes. Gmail treats dot placements as identical for delivery purposes. Every variation you generate here lands in the same inbox you entered."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How can I use Gmail variations for marketing testing?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Use different variations to test email flows, form validation, signup funnels, A/B splits, and audience segmentation — all without managing multiple inboxes."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How many Gmail variations will this generate?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Word-split mode returns one clean variation. All-mode returns every possible dot permutation, which scales with the length of your local part."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Is this Gmail Dot Variations Generator free?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes. No credit card, no signup. Enter your Gmail address and generate variations instantly."
+        }
+      }
+    ]
+  }
+  </script>
 
   <!-- Google Analytics 4 -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-83XMET894X"></script>
@@ -464,6 +540,21 @@
       padding: 10px 12px;
     }
 
+    .consent-label {
+      display: none;
+      align-items: flex-start;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--slate-500);
+      cursor: pointer;
+    }
+
+    .consent-label input[type="checkbox"] {
+      margin-top: 2px;
+      accent-color: var(--blue-600);
+      flex-shrink: 0;
+    }
+
     .result-wrap {
       margin-top: 16px;
       display: grid;
@@ -903,6 +994,10 @@
               <input id="emailInput" type="email" placeholder="name@gmail.com" autocomplete="email" required />
             </div>
 
+            <p id="emailHint" class="status-note" role="status" aria-live="polite" style="display: none; color: #b42318;"></p>
+
+            <label class="consent-label" id="consentLabel"><input type="checkbox" id="consentCheckbox" required /><span>Send me my results and occasional tips from iExcel.</span></label>
+
             <p class="status-note">Examples: micahberkley@gmail.com, micah.berkley@gmail.com, m.icahberkley@gmail.com</p>
 
             <div class="mode-grid" role="radiogroup" aria-label="Generation mode">
@@ -1113,7 +1208,79 @@
 
     const form = document.getElementById('generatorForm');
     const emailInput = document.getElementById('emailInput');
+    const emailHint = document.getElementById('emailHint');
     const statusText = document.getElementById('statusText');
+
+    // Gmail-focused typo map — mirrors lib/emailValidator.js on the server.
+    // These are the ones that matter for this tool because the results
+    // are emailed to the same address the user types.
+    const GMAIL_TYPO_MAP = {
+      'gmial.com': 'gmail.com',
+      'gmal.com': 'gmail.com',
+      'gmil.com': 'gmail.com',
+      'gmaill.com': 'gmail.com',
+      'gamil.com': 'gmail.com',
+      'gnail.com': 'gmail.com',
+      'gmail.con': 'gmail.com',
+      'gmail.co': 'gmail.com',
+      'gmail.cm': 'gmail.com',
+      'gmail.om': 'gmail.com',
+      'gmaol.com': 'gmail.com',
+      'gemail.com': 'gmail.com',
+      'googlemai.com': 'googlemail.com',
+      'googlemail.con': 'googlemail.com',
+      'googlmail.com': 'googlemail.com'
+    };
+    const GMAIL_DOMAINS_ACCEPTED = new Set(['gmail.com', 'googlemail.com']);
+
+    function checkEmailClientSide(raw) {
+      const trimmed = String(raw || '').trim().toLowerCase();
+      if (!trimmed) return { ok: false, silent: true };
+
+      const atIndex = trimmed.indexOf('@');
+      if (atIndex <= 0 || atIndex !== trimmed.lastIndexOf('@')) {
+        return { ok: false, message: 'Enter an email like name@gmail.com.' };
+      }
+
+      const localPart = trimmed.slice(0, atIndex);
+      const domainPart = trimmed.slice(atIndex + 1);
+
+      if (!domainPart || domainPart.indexOf('.') === -1) {
+        // Still typing — don't nag yet.
+        return { ok: false, silent: true };
+      }
+
+      if (GMAIL_TYPO_MAP[domainPart]) {
+        return {
+          ok: false,
+          message: `Did you mean ${localPart}@${GMAIL_TYPO_MAP[domainPart]}?`
+        };
+      }
+
+      if (!GMAIL_DOMAINS_ACCEPTED.has(domainPart)) {
+        return {
+          ok: false,
+          message: 'This tool works with Gmail and Googlemail addresses only.'
+        };
+      }
+
+      return { ok: true };
+    }
+
+    function updateEmailHint() {
+      const result = checkEmailClientSide(emailInput.value);
+      if (result.ok || result.silent) {
+        emailHint.style.display = 'none';
+        emailHint.textContent = '';
+      } else {
+        emailHint.textContent = result.message;
+        emailHint.style.display = 'block';
+      }
+    }
+
+    emailInput.addEventListener('input', updateEmailHint);
+    emailInput.addEventListener('blur', updateEmailHint);
+
     const resultWrap = document.getElementById('resultWrap');
     const primaryResult = document.getElementById('primaryResult');
     const extraSection = document.getElementById('extraSection');
@@ -1126,7 +1293,16 @@
     const batchCopyBtn = document.getElementById('batchCopyBtn');
     const copyAllTotalBtn = document.getElementById('copyAllTotalBtn');
     const resetBtn = document.getElementById('resetBtn');
+    const consentLabel = document.getElementById('consentLabel');
+    const consentCheckbox = document.getElementById('consentCheckbox');
     const MAX_VISIBLE_RESULTS = 51;
+
+    emailInput.addEventListener('input', () => {
+      consentLabel.style.display = emailInput.value.trim() ? 'flex' : 'none';
+      if (!emailInput.value.trim()) {
+        consentCheckbox.checked = false;
+      }
+    });
     const MAX_VISIBLE_EXTRAS = MAX_VISIBLE_RESULTS - 1;
 
     let lastOutput = {
@@ -1296,12 +1472,62 @@
       }
     }
 
+    function logToSheet(email, payload) {
+      if (payload.error) return;
+      const variantCount = 1 + (payload.mode === 'all' ? payload.extras.length : 0);
+      fetch('/api/log', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          email,
+          mode: payload.mode,
+          variantCount,
+          firstVariant: payload.primary,
+          consent: consentCheckbox.checked
+        }),
+        keepalive: true
+      }).catch(() => {});
+    }
+
+    function sendResultsEmail(email, payload) {
+      if (payload.error) return;
+      if (!consentCheckbox.checked) return;
+
+      const allVariations = [payload.primary, ...payload.extras].filter(Boolean);
+      if (!allVariations.length) return;
+
+      fetch('/api/send-results', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          email,
+          baseEmail: email,
+          mode: payload.mode,
+          variations: allVariations
+        }),
+        keepalive: true
+      }).catch(() => {});
+    }
+
     form.addEventListener('submit', (event) => {
       event.preventDefault();
       const email = emailInput.value.trim();
+
+      const clientCheck = checkEmailClientSide(email);
+      if (!clientCheck.ok) {
+        const message = clientCheck.message || 'Enter a valid Gmail address.';
+        emailHint.textContent = message;
+        emailHint.style.display = 'block';
+        setStatus(message, true);
+        emailInput.focus();
+        return;
+      }
+
       const mode = getSelectedMode();
       const payload = generateVariants(email, mode);
       renderOutput(payload);
+      logToSheet(email, payload);
+      sendResultsEmail(email, payload);
     });
 
     form.addEventListener('change', (event) => {
@@ -1391,6 +1617,8 @@
       form.reset();
       document.getElementById('modeWordSplit').checked = true;
       emailInput.value = '';
+      consentLabel.style.display = 'none';
+      consentCheckbox.checked = false;
       resultWrap.hidden = true;
       extraSection.hidden = true;
       extrasMeta.textContent = '';

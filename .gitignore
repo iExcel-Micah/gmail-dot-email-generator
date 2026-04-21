@@ -22,3 +22,7 @@ node_modules
 
 # Server output
 .server.out
+
+# Service account keys
+.secrets/
+*.key.json
