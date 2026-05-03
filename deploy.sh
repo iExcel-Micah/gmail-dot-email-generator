@@ -10,8 +10,9 @@
 set -euo pipefail
 
 # Configuration
-DEPLOYMENT_URL="https://agents.iexcel.co/gmail-dot-email-generator"
-BASE_PATH="/gmail-dot-email-generator"
+DEPLOYMENT_URL="https://agents.iexcel.co/gmail-dot-variations-generator"
+BASE_PATH="/gmail-dot-variations-generator"
+LEGACY_BASE_PATHS="/gmail-dot-email-generator"
 SERVICE_NAME="ixl-gmail-dot-generator"
 REGION="us-central1"
 PROJECT_ID="iexcel-agents"
@@ -121,7 +122,7 @@ deploy_production() {
         --concurrency 80 \
         --timeout 60 \
         --max-instances 10 \
-        --set-env-vars "APP_BASE_PATH=${BASE_PATH},NODE_ENV=production,GOOGLE_SHEETS_SPREADSHEET_ID=${SHEETS_SPREADSHEET_ID},GOOGLE_SHEETS_TAB=${SHEETS_TAB}"
+        --set-env-vars "APP_BASE_PATH=${BASE_PATH},APP_LEGACY_BASE_PATHS=${LEGACY_BASE_PATHS},NODE_ENV=production,GOOGLE_SHEETS_SPREADSHEET_ID=${SHEETS_SPREADSHEET_ID},GOOGLE_SHEETS_TAB=${SHEETS_TAB}"
 
     echo ""
     echo "=============================================="
