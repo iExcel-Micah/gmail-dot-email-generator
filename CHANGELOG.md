@@ -4,29 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [1.3.0] - 2026-05-03
 ### Changed
-- Renamed canonical public path from `/gmail-dot-email-generator` to `/gmail-dot-variations-generator`.
-- `deploy.sh`: new `LEGACY_BASE_PATHS` config; Cloud Run env now also sets `APP_LEGACY_BASE_PATHS` so the legacy path keeps serving traffic.
+- Renamed canonical public path from `/gmail-dot-email-generator` to `/gmail-dot-variations-generator`. Legacy path still serves via `APP_LEGACY_BASE_PATHS`.
+- `deploy.sh` rewritten for clarity; added `./deploy.sh validate` subcommand.
+- Added `DEPLOY.md` as the single deployment runbook.
 
-### Deployment
-- Deployed to Google Cloud Run on 2026-05-03.
-  - Project: `iexcel-agents`
-  - Region: `us-central1`
-  - Service: `ixl-gmail-dot-generator`
-  - Revision: `ixl-gmail-dot-generator-00008-74t` (100% traffic)
-  - Image: `gcr.io/iexcel-agents/ixl-gmail-dot-generator:latest`
-  - Runtime SA: `gmail-dot-gen-sheets@iexcel-agents.iam.gserviceaccount.com`
-- Live URLs verified (HTTP 200):
-  - Canonical: https://agents.iexcel.co/gmail-dot-variations-generator
-  - Legacy fallback: https://agents.iexcel.co/gmail-dot-email-generator
-  - Cloud Run: https://ixl-gmail-dot-generator-454575866716.us-central1.run.app
-- Page title in production: `Free Gmail Dot Variations Generator | iExcel`.
-
-### Source
-- Repository: https://github.com/iExcel-Micah/gmail-dot-email-generator (branch `main`).
-- Pushed to GitHub on 2026-05-03 06:33 -0400. Range `a5ade09..01e5938`:
-  - [`01e5938`](https://github.com/iExcel-Micah/gmail-dot-email-generator/commit/01e5938) docs: log v1.2.0/v1.3.0 release notes and 2026-05-03 production deployment
-  - [`a855ca3`](https://github.com/iExcel-Micah/gmail-dot-email-generator/commit/a855ca3) chore(deploy): rename base path to gmail-dot-variations-generator with legacy fallback
-  - [`941f4bd`](https://github.com/iExcel-Micah/gmail-dot-email-generator/commit/941f4bd) feat(gdv): plus-tag + Workspace support; remediate 5 QA bugs + GTM IDs
+### Deployed
+- Cloud Run revision `ixl-gmail-dot-generator-00008-74t` (100% traffic) on 2026-05-03. See `DEPLOY.md` for accounts, URLs, and validation.
 
 ## [1.2.0] - 2026-05-03
 ### Added

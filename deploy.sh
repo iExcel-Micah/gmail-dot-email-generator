@@ -1,115 +1,64 @@
 #!/bin/bash
-
-# =============================================================================
-# DEPLOYMENT SCRIPT FOR GMAIL DOT VARIATIONS GENERATOR
-# =============================================================================
-# CANONICAL URL: https://agents.iexcel.co/gmail-dot-variations-generator
-# LEGACY URL:    https://agents.iexcel.co/gmail-dot-email-generator (kept live)
-# NO EXCEPTIONS.
-# =============================================================================
+# Deployment script for Gmail Dot Variations Generator.
+# Full runbook: ./DEPLOY.md
 
 set -euo pipefail
 
-# Configuration
-DEPLOYMENT_URL="https://agents.iexcel.co/gmail-dot-variations-generator"
-BASE_PATH="/gmail-dot-variations-generator"
-LEGACY_BASE_PATHS="/gmail-dot-email-generator"
-SERVICE_NAME="ixl-gmail-dot-generator"
-REGION="us-central1"
+# ---- Pinned configuration (do not edit casually) ----------------------------
 PROJECT_ID="iexcel-agents"
+REGION="us-central1"
+SERVICE_NAME="ixl-gmail-dot-generator"
 GCLOUD_ACCOUNT="ads@iexcel.co"
-IMAGE_URI="gcr.io/${PROJECT_ID}/${SERVICE_NAME}:latest"
 RUNTIME_SA="gmail-dot-gen-sheets@iexcel-agents.iam.gserviceaccount.com"
+IMAGE_URI="gcr.io/${PROJECT_ID}/${SERVICE_NAME}:latest"
+
+CANONICAL_PATH="/gmail-dot-variations-generator"
+LEGACY_PATH="/gmail-dot-email-generator"
+PUBLIC_HOST="https://agents.iexcel.co"
+CLOUD_RUN_URL="https://ixl-gmail-dot-generator-454575866716.us-central1.run.app"
+
 SHEETS_SPREADSHEET_ID="12y0qOlzsx5U8sV5jV7sgJW88BOQli9ENC6w1nLiTKLA"
 SHEETS_TAB="gmail-email-generator"
 
-# =============================================================================
-# USAGE
-# =============================================================================
-#
-# LOCAL DEVELOPMENT:
-#   ./deploy.sh local
-#   Then visit: http://localhost:8080
-#
-# PRODUCTION DEPLOYMENT:
-#   ./deploy.sh production
-#   Will deploy to: https://agents.iexcel.co/gmail-dot-variations-generator
-#   Legacy path also served: https://agents.iexcel.co/gmail-dot-email-generator
-#
-# =============================================================================
+# ---- Commands ---------------------------------------------------------------
 
 show_help() {
-    echo ""
-    echo "Usage: ./deploy.sh [command]"
-    echo ""
-    echo "Commands:"
-    echo "  local       Run locally (base path: /)"
-    echo "  production  Build and deploy to Cloud Run (base path: ${BASE_PATH})"
-    echo "  help        Show this help message"
-    echo ""
-    echo "Examples:"
-    echo "  ./deploy.sh local        # Start local dev server at http://localhost:8080"
-    echo "  ./deploy.sh production   # Deploy to ${DEPLOYMENT_URL}"
-    echo ""
-    echo "Cloud target (pinned):"
-    echo "  project: ${PROJECT_ID}"
-    echo "  account: ${GCLOUD_ACCOUNT}"
-    echo "  service: ${SERVICE_NAME}"
-    echo ""
+    cat <<EOF
+
+Usage: ./deploy.sh <command>
+
+Commands:
+  local       Run dev server at http://localhost:8080
+  production  Build and deploy to Cloud Run (canonical: ${PUBLIC_HOST}${CANONICAL_PATH})
+  validate    Curl all live URLs and assert HTTP 200
+  help        Show this message
+
+Full runbook: ./DEPLOY.md
+EOF
 }
 
 run_local() {
-    echo ""
-    echo "=============================================="
-    echo "  LOCAL DEVELOPMENT SERVER"
-    echo "=============================================="
-    echo ""
-    echo "  URL: http://localhost:8080"
-    echo ""
-    echo "  Press Ctrl+C to stop"
-    echo ""
-    echo "=============================================="
-    echo ""
-
     pkill -f "node server.js" 2>/dev/null || true
-
     APP_BASE_PATH="/" node server.js
 }
 
 deploy_production() {
-    echo ""
-    echo "=============================================="
-    echo "  PRODUCTION DEPLOYMENT"
-    echo "=============================================="
-    echo ""
-    echo "  TARGET URL: ${DEPLOYMENT_URL}"
-    echo "  BASE PATH:  ${BASE_PATH}"
-    echo ""
-    echo "  NO EXCEPTIONS."
-    echo ""
-    echo "=============================================="
+    echo "==> Deploying to ${PUBLIC_HOST}${CANONICAL_PATH}"
+    echo "    project=${PROJECT_ID}  service=${SERVICE_NAME}  account=${GCLOUD_ACCOUNT}"
 
-    # Step 1: Install dependencies
-    echo ""
-    echo "[1/4] Installing dependencies..."
+    echo "==> [1/4] npm ci"
     npm ci
 
-    # Step 2: Run tests
-    echo ""
-    echo "[2/4] Running tests..."
+    echo "==> [2/4] npm test"
     npm test
 
-    # Step 3: Build & push Docker image via Cloud Build
-    echo ""
-    echo "[3/4] Building Docker image via Cloud Build..."
+    echo "==> [3/4] Cloud Build (image: ${IMAGE_URI})"
     gcloud builds submit \
         --tag "${IMAGE_URI}" \
         --project "${PROJECT_ID}" \
         --account "${GCLOUD_ACCOUNT}"
 
-    # Step 4: Deploy to Cloud Run
-    echo ""
-    echo "[4/4] Deploying to Google Cloud Run..."
+    echo "==> [4/4] Cloud Run deploy"
     gcloud run deploy "${SERVICE_NAME}" \
         --image "${IMAGE_URI}" \
         --platform managed \
@@ -124,45 +73,53 @@ deploy_production() {
         --concurrency 80 \
         --timeout 60 \
         --max-instances 10 \
-        --set-env-vars "APP_BASE_PATH=${BASE_PATH},APP_LEGACY_BASE_PATHS=${LEGACY_BASE_PATHS},NODE_ENV=production,GOOGLE_SHEETS_SPREADSHEET_ID=${SHEETS_SPREADSHEET_ID},GOOGLE_SHEETS_TAB=${SHEETS_TAB}"
+        --set-env-vars "APP_BASE_PATH=${CANONICAL_PATH},APP_LEGACY_BASE_PATHS=${LEGACY_PATH},NODE_ENV=production,GOOGLE_SHEETS_SPREADSHEET_ID=${SHEETS_SPREADSHEET_ID},GOOGLE_SHEETS_TAB=${SHEETS_TAB}"
 
-    echo ""
-    echo "=============================================="
-    echo "  DEPLOYMENT COMPLETE"
-    echo "=============================================="
-    echo ""
-    echo "  Cloud Run service deployed."
-    echo ""
-    echo "  REQUIRED: Ensure your load balancer routes:"
-    echo "    ${DEPLOYMENT_URL}"
-    echo "  to this Cloud Run service."
-    echo ""
-    echo "  NO EXCEPTIONS."
-    echo ""
-    echo "=============================================="
+    echo
+    echo "==> Deploy complete. Run './deploy.sh validate' to verify."
 }
 
-# =============================================================================
-# MAIN
-# =============================================================================
+validate_live() {
+    local fail=0
+    local urls=(
+        "${PUBLIC_HOST}${CANONICAL_PATH}"
+        "${PUBLIC_HOST}${LEGACY_PATH}"
+        "${CLOUD_RUN_URL}${CANONICAL_PATH}"
+    )
+
+    echo "==> Validating live URLs"
+    for url in "${urls[@]}"; do
+        local code
+        code=$(curl -sS -L -o /dev/null -w "%{http_code}" "${url}" || echo "000")
+        if [ "${code}" = "200" ]; then
+            printf "    [ OK ] %s  -> %s\n" "${code}" "${url}"
+        else
+            printf "    [FAIL] %s  -> %s\n" "${code}" "${url}"
+            fail=1
+        fi
+    done
+
+    if [ "${fail}" -ne 0 ]; then
+        echo "==> Validation FAILED. See ./DEPLOY.md troubleshooting."
+        exit 1
+    fi
+    echo "==> All URLs healthy."
+}
+
+# ---- Entrypoint -------------------------------------------------------------
 
 if [ ! -f "package.json" ]; then
-    echo "ERROR: package.json not found. Run this script from the project root."
+    echo "ERROR: run this script from the project root (no package.json here)."
     exit 1
 fi
 
 case "${1:-help}" in
-    local)
-        run_local
-        ;;
-    production)
-        deploy_production
-        ;;
-    help|--help|-h)
-        show_help
-        ;;
+    local)       run_local ;;
+    production)  deploy_production ;;
+    validate)    validate_live ;;
+    help|--help|-h) show_help ;;
     *)
-        echo "Unknown command: $1"
+        echo "Unknown command: ${1}"
         show_help
         exit 1
         ;;
