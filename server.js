@@ -56,20 +56,47 @@ if (!sheetService) {
 }
 
 async function logRoute(req, res) {
-  const { email, mode, variantCount, firstVariant } = req.body || {};
+  const {
+    email,
+    mode,
+    variantCount,
+    firstVariant,
+    workspaceDomain,
+    isWorkspace,
+    plusTagsUsed,
+    plusVariantCount,
+    consent
+  } = req.body || {};
+
   if (typeof email !== 'string' || !email) {
     return res.status(400).json({ ok: false, error: 'email required' });
   }
 
-  const validation = validateEmail(email);
-  if (!validation.valid) {
-    return res.status(400).json({ ok: false, error: validation.reason });
+  // In Workspace mode we deliberately skip the Gmail-only validateEmail check
+  // because the user is using a custom company domain. We still parse the
+  // address to make sure it's structurally a valid email and that the local
+  // part is gmail-rules-compatible (letters/numbers/dots only).
+  const wsDomain = typeof workspaceDomain === 'string' ? workspaceDomain.trim().toLowerCase() : '';
+  const useWorkspace = !!isWorkspace && !!wsDomain;
+
+  if (!useWorkspace) {
+    const validation = validateEmail(email);
+    if (!validation.valid) {
+      return res.status(400).json({ ok: false, error: validation.reason });
+    }
   }
 
-  const parsed = parseGmailAddress(email);
+  const parsed = parseGmailAddress(email, useWorkspace ? { workspaceDomain: wsDomain } : undefined);
   if (!parsed) {
-    return res.status(400).json({ ok: false, error: 'invalid gmail address' });
+    return res.status(400).json({
+      ok: false,
+      error: useWorkspace ? 'invalid email for the supplied workspace domain' : 'invalid gmail address'
+    });
   }
+
+  const safePlusTags = Array.isArray(plusTagsUsed)
+    ? plusTagsUsed.filter((t) => typeof t === 'string').slice(0, 50).join(',')
+    : '';
 
   const record = {
     timestamp: new Date().toISOString(),
@@ -82,7 +109,12 @@ async function logRoute(req, res) {
     variantCount: Number.isFinite(variantCount) ? variantCount : '',
     firstVariant: typeof firstVariant === 'string' ? firstVariant : '',
     userAgent: (req.headers['user-agent'] || '').slice(0, 500),
-    ip: (req.headers['x-forwarded-for']?.toString().split(',')[0].trim()) || req.ip || ''
+    ip: (req.headers['x-forwarded-for']?.toString().split(',')[0].trim()) || req.ip || '',
+    isWorkspace: useWorkspace ? 'yes' : 'no',
+    workspaceDomain: useWorkspace ? wsDomain : '',
+    plusTagsUsed: safePlusTags,
+    plusVariantCount: Number.isFinite(plusVariantCount) ? plusVariantCount : '',
+    consent: consent ? 'yes' : 'no'
   };
 
   if (sheetService) {
@@ -92,6 +124,11 @@ async function logRoute(req, res) {
       console.error('[sheets] append failed:', error.message);
       return res.json({ ok: true, leadId: record.leadId, logged: false });
     }
+  } else {
+    // Visibility: when sheets isn't configured we still want to see what
+    // would have been written. Helps GDV-005 root-cause diagnosis in prod
+    // logs without needing to redeploy.
+    console.log('[sheets:disabled] would-log lead:', JSON.stringify(record));
   }
 
   res.json({ ok: true, leadId: record.leadId, logged: !!sheetService });

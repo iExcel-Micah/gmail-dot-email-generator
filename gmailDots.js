@@ -3,6 +3,62 @@ const DEFAULT_MAX_VARIANTS = 65536;
 const DEFAULT_MODE = 'wordSplit';
 const MIN_WORD_SPLIT_SCORE = 15;
 
+// Common +alias tags suggested when the user does not specify any of their own.
+// Gmail (and any Google Workspace inbox) routes `user+anything@domain` back to
+// `user@domain`, so these are useful for tracking where an address was used.
+export const DEFAULT_PLUS_TAGS = Object.freeze([
+  'signup', 'newsletter', 'promo', 'social', 'shop'
+]);
+
+// Gmail/Google Workspace local-part rules (post-dot-strip) only allow a-z 0-9.
+// We are intentionally lenient on the +tag so users can pass things like
+// "newsletter-1" or "shop_2025".
+const PLUS_TAG_REGEX = /^[a-z0-9._-]+$/i;
+
+function isValidWorkspaceDomain(domain) {
+  if (typeof domain !== 'string') return false;
+  const trimmed = domain.trim().toLowerCase();
+  if (!trimmed || trimmed.length > 253) return false;
+  // RFC 1035-ish: labels separated by dots, each label 1-63 chars,
+  // alphanumeric with internal hyphens, must contain at least one dot,
+  // and the TLD must be at least 2 chars and non-numeric.
+  if (!/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/.test(trimmed)) {
+    return false;
+  }
+  const tld = trimmed.split('.').pop();
+  if (tld.length < 2 || /^\d+$/.test(tld)) return false;
+  return true;
+}
+
+export function normalizePlusTags(input) {
+  let raw = [];
+  if (Array.isArray(input)) {
+    raw = input;
+  } else if (typeof input === 'string') {
+    raw = input.split(/[\s,;]+/);
+  } else if (input == null) {
+    return [];
+  } else {
+    return [];
+  }
+
+  const seen = new Set();
+  const out = [];
+  for (const item of raw) {
+    if (typeof item !== 'string') continue;
+    let tag = item.trim().toLowerCase();
+    if (!tag) continue;
+    if (tag.startsWith('+')) tag = tag.slice(1);
+    if (!tag) continue;
+    if (!PLUS_TAG_REGEX.test(tag)) continue;
+    if (tag.length > 64) continue;
+    if (seen.has(tag)) continue;
+    seen.add(tag);
+    out.push(tag);
+  }
+  return out;
+}
+
 const COMMON_FIRST_NAMES = new Set([
   'alex', 'andrew', 'anna', 'ben', 'chris', 'daniel', 'david', 'emma',
   'ethan', 'james', 'jane', 'john', 'josh', 'katie', 'mark', 'mary',
@@ -15,7 +71,7 @@ const COMMON_LAST_NAMES = new Set([
   'roberts', 'smith', 'taylor', 'thomas', 'walker', 'williams', 'wilson'
 ]);
 
-export function parseGmailAddress(value) {
+export function parseGmailAddress(value, options = {}) {
   if (typeof value !== 'string') {
     return null;
   }
@@ -30,7 +86,24 @@ export function parseGmailAddress(value) {
   const localRaw = trimmed.slice(0, atIndex);
   const domain = trimmed.slice(atIndex + 1).toLowerCase();
 
-  if (!GMAIL_DOMAINS.has(domain)) {
+  // Domain acceptance:
+  //   - default: gmail.com / googlemail.com (consumer Gmail)
+  //   - Google Workspace mode: any valid domain explicitly allowed by the
+  //     caller via `options.workspaceDomain` or `options.allowAnyDomain`.
+  //     Workspace inboxes inherit Gmail's dot-and-plus aliasing, so the
+  //     same generator logic applies once we accept the domain.
+  const allowedWorkspaceDomain = typeof options.workspaceDomain === 'string'
+    ? options.workspaceDomain.trim().toLowerCase()
+    : '';
+  const allowAnyDomain = options.allowAnyDomain === true;
+
+  const isGmailConsumer = GMAIL_DOMAINS.has(domain);
+  const isAllowedWorkspace = !!allowedWorkspaceDomain
+    && allowedWorkspaceDomain === domain
+    && isValidWorkspaceDomain(domain);
+  const isAnyValidDomain = allowAnyDomain && isValidWorkspaceDomain(domain);
+
+  if (!isGmailConsumer && !isAllowedWorkspace && !isAnyValidDomain) {
     return null;
   }
 
@@ -59,8 +132,46 @@ export function parseGmailAddress(value) {
     baseLocal,
     casedLocal,
     plusTag,
-    domain
+    domain,
+    isWorkspace: !isGmailConsumer
   };
+}
+
+/**
+ * Generate +alias variants for a parsed address.
+ *
+ * Returns an array of unique addresses with each tag injected as a +alias on
+ * the address. Includes the dot-stripped baseline first so callers can show
+ * "user@domain" alongside the +tag versions.
+ *
+ * @param {object} parsed       - result of parseGmailAddress()
+ * @param {object} [options]
+ * @param {string|string[]} [options.tags] - tags to use (defaults to DEFAULT_PLUS_TAGS)
+ * @param {string} [options.localOverride] - alternate local part (e.g. dot-split version)
+ */
+export function generatePlusTagVariants(parsed, options = {}) {
+  if (!parsed || typeof parsed !== 'object') return [];
+
+  const local = typeof options.localOverride === 'string' && options.localOverride
+    ? options.localOverride
+    : parsed.baseLocal;
+  const domain = parsed.domain;
+
+  const tags = options.tags === undefined
+    ? [...DEFAULT_PLUS_TAGS]
+    : normalizePlusTags(options.tags);
+
+  if (!local || !domain) return [];
+
+  const seen = new Set();
+  const out = [];
+  for (const tag of tags) {
+    const addr = `${local}+${tag}@${domain}`.toLowerCase();
+    if (seen.has(addr)) continue;
+    seen.add(addr);
+    out.push(addr);
+  }
+  return out;
 }
 
 function generateAllVariants(parsed) {
@@ -169,7 +280,10 @@ function generateWordSplitVariants(parsed) {
 }
 
 export function generateGmailDotVariants(value, options = {}) {
-  const parsed = parseGmailAddress(value);
+  const parsed = parseGmailAddress(value, {
+    workspaceDomain: options.workspaceDomain,
+    allowAnyDomain: options.allowAnyDomain
+  });
 
   if (!parsed) {
     return [];

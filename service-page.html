@@ -986,7 +986,7 @@
         <div class="generator-wrap">
           <form id="generatorForm" class="generator-form" novalidate>
             <div class="input-wrap">
-              <label class="sr-only" for="emailInput">Gmail address</label>
+              <label class="sr-only" for="emailInput">Email address</label>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="M4 4h16v16H4z"></path>
                 <path d="m22 6-10 7L2 6"></path>
@@ -996,9 +996,35 @@
 
             <p id="emailHint" class="status-note" role="status" aria-live="polite" style="display: none; color: #b42318;"></p>
 
+            <label class="consent-label" id="workspaceLabel" style="display: flex;">
+              <input type="checkbox" id="workspaceCheckbox" />
+              <span>Using Google Workspace? Tick this to use a custom company domain (e.g. <em>name@yourcompany.com</em>). Workspace inboxes inherit Gmail's dot and +alias rules.</span>
+            </label>
+
+            <div class="input-wrap" id="workspaceDomainWrap" style="display: none;">
+              <label class="sr-only" for="workspaceDomainInput">Workspace domain</label>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M2 12h20"></path>
+                <path d="M12 2a15.3 15.3 0 0 1 0 20"></path>
+                <path d="M12 2a15.3 15.3 0 0 0 0 20"></path>
+              </svg>
+              <input id="workspaceDomainInput" type="text" placeholder="yourcompany.com" autocomplete="off" />
+            </div>
+
+            <div class="input-wrap">
+              <label class="sr-only" for="plusTagsInput">Plus tags (optional)</label>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M12 5v14"></path>
+                <path d="M5 12h14"></path>
+              </svg>
+              <input id="plusTagsInput" type="text" placeholder="Plus tags, comma-separated (optional): e.g. signup, newsletter, promo" autocomplete="off" />
+            </div>
+            <p class="status-note">Plus addressing routes <strong>name+anything@gmail.com</strong> back to <strong>name@gmail.com</strong>. Leave blank to use the default suggestions (signup, newsletter, promo, social, shop).</p>
+
             <label class="consent-label" id="consentLabel"><input type="checkbox" id="consentCheckbox" required /><span>Send me my results and occasional tips from iExcel.</span></label>
 
-            <p class="status-note">Examples: micahberkley@gmail.com, micah.berkley@gmail.com, m.icahberkley@gmail.com</p>
+            <p class="status-note">Examples: micahberkley@gmail.com, micah.berkley@gmail.com, micahberkley+signup@gmail.com</p>
 
             <div class="mode-grid" role="radiogroup" aria-label="Generation mode">
               <label class="mode-option" for="modeWordSplit">
@@ -1019,7 +1045,7 @@
             </div>
 
             <div class="button-row">
-              <button class="btn btn-primary" type="submit">Generate Gmail Variations</button>
+              <button id="generate-variations-btn" class="btn btn-primary" type="submit">Generate Gmail Variations</button>
               <button id="batchCopyBtn" class="btn btn-secondary" type="button" disabled>Copy Page</button>
               <button id="copyAllTotalBtn" class="btn btn-secondary" type="button" disabled>Copy All (All Pages)</button>
               <button id="resetBtn" class="btn btn-secondary" type="button">Reset</button>
@@ -1163,7 +1189,7 @@
         <section class="footer-brand">
           <img src="https://iexcel.co/wp-content/uploads/2023/01/iexcel_logo.png" alt="iExcel" />
           <p>Digital Marketing, Focused On Growth. Practical Gmail generator tools for email marketing testing.</p>
-          <a href="tel:+13477624250" style="color: var(--blue-600); font-size: 13px; font-weight: 500;">+1 (347) 762-4250</a>
+          <a href="https://iexcel.co/#contact-us" target="_blank" rel="noreferrer" style="color: var(--blue-600); font-size: 13px; font-weight: 500;">Contact iExcel</a>
         </section>
 
         <section class="footer-col">
@@ -1177,8 +1203,8 @@
         <section class="footer-col">
           <h4>Resources</h4>
           <a href="https://iexcel.co" target="_blank" rel="noreferrer">iExcel</a>
-          <a href="https://iexcel.co/contact" target="_blank" rel="noreferrer">Contact</a>
-          <a href="https://iexcel.co/about" target="_blank" rel="noreferrer">About</a>
+          <a href="https://iexcel.co/#contact-us" target="_blank" rel="noreferrer">Contact</a>
+          <a href="https://iexcel.co/#about" target="_blank" rel="noreferrer">About</a>
           <a href="https://iexcel.co/blog" target="_blank" rel="noreferrer">Blog</a>
         </section>
 
@@ -1204,12 +1230,37 @@
   </footer>
 
   <script type="module">
-    import { generateGmailDotVariants, parseGmailAddress } from './gmailDots.js';
+    import {
+      generateGmailDotVariants,
+      parseGmailAddress,
+      generatePlusTagVariants,
+      normalizePlusTags,
+      DEFAULT_PLUS_TAGS
+    } from './gmailDots.js';
 
     const form = document.getElementById('generatorForm');
     const emailInput = document.getElementById('emailInput');
     const emailHint = document.getElementById('emailHint');
     const statusText = document.getElementById('statusText');
+    const workspaceCheckbox = document.getElementById('workspaceCheckbox');
+    const workspaceDomainWrap = document.getElementById('workspaceDomainWrap');
+    const workspaceDomainInput = document.getElementById('workspaceDomainInput');
+    const plusTagsInput = document.getElementById('plusTagsInput');
+
+    function getWorkspaceDomain() {
+      if (!workspaceCheckbox.checked) return '';
+      return (workspaceDomainInput.value || '').trim().toLowerCase();
+    }
+
+    function isWorkspaceModeActive() {
+      return workspaceCheckbox.checked;
+    }
+
+    workspaceCheckbox.addEventListener('change', () => {
+      workspaceDomainWrap.style.display = workspaceCheckbox.checked ? 'block' : 'none';
+      updateEmailHint();
+    });
+    workspaceDomainInput.addEventListener('input', updateEmailHint);
 
     // Gmail-focused typo map — mirrors lib/emailValidator.js on the server.
     // These are the ones that matter for this tool because the results
@@ -1233,6 +1284,8 @@
     };
     const GMAIL_DOMAINS_ACCEPTED = new Set(['gmail.com', 'googlemail.com']);
 
+    const WORKSPACE_DOMAIN_REGEX = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/;
+
     function checkEmailClientSide(raw) {
       const trimmed = String(raw || '').trim().toLowerCase();
       if (!trimmed) return { ok: false, silent: true };
@@ -1250,6 +1303,25 @@
         return { ok: false, silent: true };
       }
 
+      // Workspace mode: allow any valid custom domain that matches the
+      // domain typed in the Workspace domain input.
+      if (isWorkspaceModeActive()) {
+        const wsDomain = getWorkspaceDomain();
+        if (!wsDomain) {
+          return { ok: false, message: 'Enter your Google Workspace domain (e.g. yourcompany.com).' };
+        }
+        if (!WORKSPACE_DOMAIN_REGEX.test(wsDomain)) {
+          return { ok: false, message: 'Workspace domain looks invalid. Use the form yourcompany.com.' };
+        }
+        if (domainPart !== wsDomain) {
+          return {
+            ok: false,
+            message: `Email domain (${domainPart}) does not match your Workspace domain (${wsDomain}).`
+          };
+        }
+        return { ok: true };
+      }
+
       if (GMAIL_TYPO_MAP[domainPart]) {
         return {
           ok: false,
@@ -1260,7 +1332,7 @@
       if (!GMAIL_DOMAINS_ACCEPTED.has(domainPart)) {
         return {
           ok: false,
-          message: 'This tool works with Gmail and Googlemail addresses only.'
+          message: 'This tool works with Gmail and Googlemail addresses only. Tick "Using Google Workspace?" to use a custom domain.'
         };
       }
 
@@ -1395,23 +1467,43 @@
     }
 
     function generateVariants(address, mode) {
-      const parsed = parseGmailAddress(address);
+      const workspaceDomain = getWorkspaceDomain();
+      const parserOptions = workspaceDomain ? { workspaceDomain } : undefined;
+      const parsed = parseGmailAddress(address, parserOptions);
 
       if (!parsed) {
         return {
-          error: 'Enter a valid Gmail/Googlemail address (letters, numbers, dots in local part).'
+          error: workspaceDomain
+            ? 'Enter a valid email at your Workspace domain (letters, numbers, dots in local part).'
+            : 'Enter a valid Gmail/Googlemail address (letters, numbers, dots in local part).'
         };
       }
 
       const noDot = deriveNoDotVariant(parsed);
-      const wordSplit = (generateGmailDotVariants(address, { mode: 'wordSplit' })[0] || noDot).toLowerCase();
+      const generatorOptions = workspaceDomain ? { workspaceDomain } : {};
+      const wordSplit = (generateGmailDotVariants(address, { ...generatorOptions, mode: 'wordSplit' })[0] || noDot).toLowerCase();
+
+      // Resolve the +alias tags. If the user typed something into the
+      // plus-tag field we use that; otherwise we fall back to the curated
+      // default list so users still see useful examples.
+      const userTags = normalizePlusTags(plusTagsInput.value);
+      const tagsToUse = userTags.length ? userTags : [...DEFAULT_PLUS_TAGS];
+
+      // Build +alias variants on the dot-stripped base local AND on the
+      // word-split local (e.g. john.smith+signup@gmail.com) so users see
+      // both shapes.
+      const wordSplitLocal = wordSplit.split('@')[0];
+      const plusBase = generatePlusTagVariants(parsed, { tags: tagsToUse });
+      const plusSplit = wordSplitLocal !== parsed.baseLocal
+        ? generatePlusTagVariants(parsed, { tags: tagsToUse, localOverride: wordSplitLocal })
+        : [];
 
       let extras = [];
       let modeWarning = '';
 
       if (mode === 'all') {
         try {
-          const all = generateGmailDotVariants(address, { mode: 'all' });
+          const all = generateGmailDotVariants(address, { ...generatorOptions, mode: 'all' });
           extras = dedupe(all)
             .map((variant) => variant.toLowerCase())
             .filter((variant) => variant !== noDot.toLowerCase() && variant !== wordSplit);
@@ -1422,11 +1514,22 @@
         }
       }
 
+      // Append +alias variants to the extras list. They are unique by
+      // construction (different "+tag" segment) so we just dedupe against
+      // primary/noDot defensively.
+      const plusVariants = dedupe([...plusBase, ...plusSplit])
+        .filter((v) => v !== noDot.toLowerCase() && v !== wordSplit);
+      extras = dedupe([...extras, ...plusVariants]);
+
       return {
         mode,
         noDot: noDot.toLowerCase(),
         primary: wordSplit,
         extras,
+        plusVariants,
+        plusTagsUsed: tagsToUse,
+        workspaceDomain,
+        isWorkspace: !!workspaceDomain,
         modeWarning
       };
     }
@@ -1474,7 +1577,7 @@
 
     function logToSheet(email, payload) {
       if (payload.error) return;
-      const variantCount = 1 + (payload.mode === 'all' ? payload.extras.length : 0);
+      const variantCount = 1 + (payload.extras ? payload.extras.length : 0);
       fetch('/api/log', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
@@ -1483,7 +1586,11 @@
           mode: payload.mode,
           variantCount,
           firstVariant: payload.primary,
-          consent: consentCheckbox.checked
+          consent: consentCheckbox.checked,
+          workspaceDomain: payload.workspaceDomain || '',
+          isWorkspace: !!payload.isWorkspace,
+          plusTagsUsed: payload.plusTagsUsed || [],
+          plusVariantCount: payload.plusVariants ? payload.plusVariants.length : 0
         }),
         keepalive: true
       }).catch(() => {});
@@ -1531,7 +1638,10 @@
     });
 
     form.addEventListener('change', (event) => {
-      if (!event.target || event.target.name !== 'mode') {
+      const target = event.target;
+      if (!target) return;
+      const triggerIds = new Set(['workspaceCheckbox', 'workspaceDomainInput', 'plusTagsInput']);
+      if (target.name !== 'mode' && !triggerIds.has(target.id)) {
         return;
       }
 
@@ -1540,7 +1650,27 @@
         return;
       }
 
+      // For free-text inputs (plus tags, workspace domain) we don't want to
+      // surface validation errors mid-typing, only re-render if the address
+      // currently parses.
       const payload = generateVariants(email, getSelectedMode());
+      if (payload.error) return;
+      renderOutput(payload);
+    });
+
+    plusTagsInput.addEventListener('input', () => {
+      const email = emailInput.value.trim();
+      if (!email) return;
+      const payload = generateVariants(email, getSelectedMode());
+      if (payload.error) return;
+      renderOutput(payload);
+    });
+
+    workspaceDomainInput.addEventListener('input', () => {
+      const email = emailInput.value.trim();
+      if (!email) return;
+      const payload = generateVariants(email, getSelectedMode());
+      if (payload.error) return;
       renderOutput(payload);
     });
 
@@ -1617,6 +1747,10 @@
       form.reset();
       document.getElementById('modeWordSplit').checked = true;
       emailInput.value = '';
+      plusTagsInput.value = '';
+      workspaceCheckbox.checked = false;
+      workspaceDomainInput.value = '';
+      workspaceDomainWrap.style.display = 'none';
       consentLabel.style.display = 'none';
       consentCheckbox.checked = false;
       resultWrap.hidden = true;
