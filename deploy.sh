@@ -1,9 +1,10 @@
 #!/bin/bash
 
 # =============================================================================
-# DEPLOYMENT SCRIPT FOR GMAIL DOT EMAIL GENERATOR
+# DEPLOYMENT SCRIPT FOR GMAIL DOT VARIATIONS GENERATOR
 # =============================================================================
-# DEPLOYMENT URL: https://agents.iexcel.co/gmail-dot-email-generator
+# CANONICAL URL: https://agents.iexcel.co/gmail-dot-variations-generator
+# LEGACY URL:    https://agents.iexcel.co/gmail-dot-email-generator (kept live)
 # NO EXCEPTIONS.
 # =============================================================================
 
@@ -32,7 +33,8 @@ SHEETS_TAB="gmail-email-generator"
 #
 # PRODUCTION DEPLOYMENT:
 #   ./deploy.sh production
-#   Will deploy to: https://agents.iexcel.co/gmail-dot-email-generator
+#   Will deploy to: https://agents.iexcel.co/gmail-dot-variations-generator
+#   Legacy path also served: https://agents.iexcel.co/gmail-dot-email-generator
 #
 # =============================================================================
 
