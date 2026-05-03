@@ -21,6 +21,13 @@ All notable changes to this project will be documented in this file.
   - Cloud Run: https://ixl-gmail-dot-generator-454575866716.us-central1.run.app
 - Page title in production: `Free Gmail Dot Variations Generator | iExcel`.
 
+### Source
+- Repository: https://github.com/iExcel-Micah/gmail-dot-email-generator (branch `main`).
+- Pushed to GitHub on 2026-05-03 06:33 -0400. Range `a5ade09..01e5938`:
+  - [`01e5938`](https://github.com/iExcel-Micah/gmail-dot-email-generator/commit/01e5938) docs: log v1.2.0/v1.3.0 release notes and 2026-05-03 production deployment
+  - [`a855ca3`](https://github.com/iExcel-Micah/gmail-dot-email-generator/commit/a855ca3) chore(deploy): rename base path to gmail-dot-variations-generator with legacy fallback
+  - [`941f4bd`](https://github.com/iExcel-Micah/gmail-dot-email-generator/commit/941f4bd) feat(gdv): plus-tag + Workspace support; remediate 5 QA bugs + GTM IDs
+
 ## [1.2.0] - 2026-05-03
 ### Added
 - **Plus-tag (`+alias`) variations** alongside dot variations.
