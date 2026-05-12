@@ -1644,6 +1644,13 @@
       const mode = getSelectedMode();
       const payload = generateVariants(email, mode);
       renderOutput(payload);
+      // GTM dataLayer event — fires only on successful render (no error payload)
+      if (!payload.error) {
+        (window.dataLayer = window.dataLayer || []).push({
+          event: 'gdv_generate_variations',
+          email_domain: email.split('@')[1] || ''
+        });
+      }
       logToSheet(email, payload);
       sendResultsEmail(email, payload);
     });
