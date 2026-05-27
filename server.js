@@ -143,21 +143,43 @@ if (!BASE_PATHS.includes('/')) {
 }
 
 async function sendResultsRoute(req, res) {
-  const { email, baseEmail, mode, variations } = req.body || {};
+  const { email, baseEmail, mode, variations, workspaceDomain, isWorkspace } = req.body || {};
 
   if (typeof email !== 'string' || !email) {
     return res.status(400).json({ ok: false, error: 'email required' });
   }
 
-  const validation = validateEmail(email);
-  if (!validation.valid) {
-    return res.status(400).json({ ok: false, error: validation.reason });
+  // Workspace-mode bypass — mirrors the pattern in /api/log so users on
+  // custom Google Workspace domains (e.g. Micah@iexcel.co) can request
+  // emailed results without tripping the Gmail-only validator.
+  const wsDomain = typeof workspaceDomain === 'string' ? workspaceDomain.trim().toLowerCase() : '';
+  const useWorkspace = !!isWorkspace && !!wsDomain;
+
+  if (!useWorkspace) {
+    const validation = validateEmail(email);
+    if (!validation.valid) {
+      return res.status(400).json({ ok: false, error: validation.reason });
+    }
+  } else {
+    // Light structural sanity check for workspace-mode addresses since we
+    // skipped the strict Gmail-only validator above.
+    const parsed = parseGmailAddress(email, { workspaceDomain: wsDomain });
+    if (!parsed) {
+      return res.status(400).json({
+        ok: false,
+        error: 'invalid email for the supplied workspace domain'
+      });
+    }
   }
 
   if (!Array.isArray(variations) || variations.length === 0) {
     return res.status(400).json({ ok: false, error: 'variations required' });
   }
 
+  // EMAIL-GDV-500: Do NOT block the response on email failures. If AgentMail
+  // is misconfigured or the template throws, we still return 200 so the UI
+  // doesn't show a generic 500 to the user — their variations already
+  // rendered client-side. We log the failure for ops.
   try {
     await sendResultsEmail({
       to: email,
@@ -165,10 +187,17 @@ async function sendResultsRoute(req, res) {
       mode: mode || 'wordSplit',
       variations,
     });
-    res.json({ ok: true });
+    res.json({ ok: true, emailQueued: true });
   } catch (error) {
-    console.error('[email] send failed:', error.message);
-    res.status(500).json({ ok: false, error: 'Failed to send email' });
+    console.error('[email] send failed:', {
+      message: error && error.message,
+      name: error && error.name,
+      stack: error && error.stack,
+      to: email,
+      mode,
+      variationCount: variations.length,
+    });
+    res.json({ ok: true, emailQueued: false });
   }
 }
 

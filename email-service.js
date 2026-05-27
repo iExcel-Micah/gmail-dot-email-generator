@@ -142,19 +142,52 @@ export async function sendResultsEmail({ to, baseEmail, mode, variations }) {
     throw new Error('Recipient email is required');
   }
 
-  const mailClient = getClient();
-  const inboxId = process.env.AGENTMAIL_INBOX_ID || DEFAULT_INBOX_ID;
+  // EMAIL-GDV-500: Detailed try/catch around the AgentMail send so we get
+  // actionable logs when the prod 500 fires (template error vs API error vs
+  // missing env). Caller (server.js) catches and returns 200 with
+  // emailQueued:false so the user never sees a 500.
+  let inboxId;
+  let html;
+  let text;
+  try {
+    const mailClient = getClient();
+    inboxId = process.env.AGENTMAIL_INBOX_ID || DEFAULT_INBOX_ID;
 
-  const payload = { baseEmail, mode, variations };
-  const html = renderEmailHtml(payload);
-  const text = renderEmailText(payload);
+    const payload = { baseEmail, mode, variations };
+    html = renderEmailHtml(payload);
+    text = renderEmailText(payload);
+  } catch (renderError) {
+    console.error('[email-service] template/setup error:', {
+      message: renderError && renderError.message,
+      hasApiKey: !!process.env.AGENTMAIL_API_KEY,
+      inboxId: process.env.AGENTMAIL_INBOX_ID || DEFAULT_INBOX_ID,
+      to,
+      mode,
+      variationCount: Array.isArray(variations) ? variations.length : 0,
+    });
+    throw renderError;
+  }
 
-  await mailClient.inboxes.messages.send(inboxId, {
-    to,
-    subject: `Your Gmail Dot Variations for ${baseEmail}`,
-    text,
-    html,
-  });
+  try {
+    await getClient().inboxes.messages.send(inboxId, {
+      to,
+      subject: `Your Gmail Dot Variations for ${baseEmail}`,
+      text,
+      html,
+    });
+  } catch (sendError) {
+    console.error('[email-service] AgentMail send error:', {
+      message: sendError && sendError.message,
+      name: sendError && sendError.name,
+      status: sendError && (sendError.statusCode || sendError.status),
+      body: sendError && sendError.body,
+      to,
+      inboxId,
+      mode,
+      variationCount: variations.length,
+    });
+    throw sendError;
+  }
 
   return { ok: true, inboxId };
 }

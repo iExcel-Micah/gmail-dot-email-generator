@@ -1626,7 +1626,9 @@
           email,
           baseEmail: email,
           mode: payload.mode,
-          variations: allVariations
+          variations: allVariations,
+          workspaceDomain: payload.workspaceDomain || '',
+          isWorkspace: !!payload.isWorkspace
         }),
         keepalive: true
       }).catch(() => {});
