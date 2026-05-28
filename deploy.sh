@@ -12,8 +12,8 @@ GCLOUD_ACCOUNT="ads@iexcel.co"
 RUNTIME_SA="gmail-dot-gen-sheets@iexcel-agents.iam.gserviceaccount.com"
 IMAGE_URI="gcr.io/${PROJECT_ID}/${SERVICE_NAME}:latest"
 
-CANONICAL_PATH="/gmail-dot-variations-generator"
-LEGACY_PATH="/gmail-dot-email-generator"
+CANONICAL_PATH="/gmail-dot-trick"
+LEGACY_PATH="/gmail-dot-variations-generator"
 PUBLIC_HOST="https://agents.iexcel.co"
 CLOUD_RUN_URL="https://ixl-gmail-dot-generator-454575866716.us-central1.run.app"
 

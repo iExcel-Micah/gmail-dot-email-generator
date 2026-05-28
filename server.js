@@ -27,6 +27,8 @@ const PORT = parseInt(process.env.PORT || '8080', 10);
 const PRIMARY_BASE_PATH = process.env.APP_BASE_PATH || '/';
 // Comma-separated legacy base paths we still serve for URL rename transition windows.
 // Example: APP_LEGACY_BASE_PATHS=/gmail-dot-email-generator
+// Note: /gmail-dot-variations-generator is handled separately via a 301 redirect
+// to the new canonical /gmail-dot-trick (defined below); don't list it here.
 const LEGACY_BASE_PATHS = (process.env.APP_LEGACY_BASE_PATHS || '')
   .split(',')
   .map((s) => s.trim())
@@ -38,6 +40,13 @@ const TAB_NAME = process.env.GOOGLE_SHEETS_TAB || 'gmail-email-generator';
 
 const app = express();
 app.use(express.json({ limit: '2mb' }));
+
+// 301 redirect old canonical slug to new canonical slug. Defined BEFORE any
+// static / route handlers so it always wins. This preserves SEO equity from
+// /gmail-dot-variations-generator (prior canonical) to /gmail-dot-trick.
+app.get(/^\/gmail-dot-variations-generator(\/.*)?$/, (req, res) => {
+  res.redirect(301, req.url.replace('/gmail-dot-variations-generator', '/gmail-dot-trick'));
+});
 
 const staticDir = __dirname;
 for (const bp of BASE_PATHS) {
